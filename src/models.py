@@ -1,8 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, Integer, ForeignKey, Table, Column, DateTime, Text
+from sqlalchemy import String, Boolean, Integer, ForeignKey, Table, Column, DateTime, Text 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from eralchemy2 import render_er
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Inicializar Flask-SQLAlchemy
 db = SQLAlchemy()
@@ -37,6 +37,26 @@ class Character(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     birth_year: Mapped[str] = mapped_column(String(50), nullable=False)
+    eye_color: Mapped[str] = mapped_column(String(50), nullable=False)
+    gender: Mapped[str] = mapped_column(String(50), nullable=False)
+    hair_color: Mapped[str] = mapped_column(String(50), nullable=False)
+    height: Mapped[str] = mapped_column(String(50), nullable=False)
+    mass: Mapped[str] = mapped_column(String(50), nullable=False)
+    skin_color: Mapped[str] = mapped_column(String(50), nullable=False)
+    url: Mapped[str] = mapped_column(String(150), nullable=False)
+    created: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    edited: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "birth_year": self.birth_year 
+        }
+    
+    @classmethod
+    def get_by_id(cls, character_id: int):
+        return db.session.execute(db.select(cls).filter_by(id=character_id)).scalar_one_or_none()
 
 class Planet(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -54,9 +74,9 @@ class Vehicle(db.Model):
 class Favorite(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    character_id: Mapped[int] = mapped_column(ForeignKey("character.id"), nullable=True)
-    planet_id: Mapped[int] = mapped_column(ForeignKey("planet.id"), nullable=True)
-    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicle.id"), nullable=True)
+    character_id: Mapped[int] = mapped_column(ForeignKey("character.id", ondelete="CASCADE"), nullable=True)
+    planet_id: Mapped[int] = mapped_column(ForeignKey("planet.id", ondelete="CASCADE"), nullable=True)
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicle.id", ondelete="CASCADE"), nullable=True)
     # Relaciones
     user: Mapped[list['User']] = relationship("User", back_populates="favorites")
     character: Mapped[list['Character']] = relationship("Character")
@@ -68,7 +88,7 @@ class Post(db.Model):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(250), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     # Relaciones
     user: Mapped[list['User']] = relationship("User", back_populates="posts")
     comments: Mapped[list['Comment']] = relationship("Comment", back_populates="post")
@@ -78,7 +98,7 @@ class Comment(db.Model):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     # Relaciones
     user: Mapped[list['User']] = relationship("User", back_populates="comments")
     post: Mapped[list['Post']] = relationship("Post", back_populates="comments")

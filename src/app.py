@@ -36,6 +36,17 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+
+# @app.route('/people', methods=[GET])
+# def handle_people():
+#     try:
+#         people_list = []
+#         # Muestra una lista de objetos People.
+#         people = db.session.execute(db.select(People)).scalars().all(
+#         for ppl in people:
+#             people_list
+#         )
+
 @app.route('/user', methods=['GET'])
 def handle_hello():
 
