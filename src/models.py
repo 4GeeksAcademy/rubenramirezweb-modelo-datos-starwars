@@ -11,7 +11,7 @@ db = SQLAlchemy()
 # Una tabla User - Post     → Uno-a-muchos (Un usuario puede escribir varios posts, pero un post pertenece a un solo usuario).
 # Una tabla Post - Comment  → Uno-a-muchos (Un post puede tener varios comentarios, pero cada comentario pertenece a un solo post).
 # Una tabla User - Comment  → Uno-a-muchos (Un usuario puede hacer varios comentarios, pero cada comentario pertenece a un solo usuario).
-# Una tabla Character/Planet/Vehicle - Favorite → Muchos-a-muchos (Un usuario puede guardar varios personajes, planetas o vehículos como favoritos y estos pueden ser favoritos de varios usuarios).
+# Una tabla People/Planet/Vehicle - Favorite → Muchos-a-muchos (Un usuario puede guardar varios personajes, planetas o vehículos como favoritos y estos pueden ser favoritos de varios usuarios).
 
 class User(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -30,10 +30,15 @@ class User(db.Model):
         return {
             "id": self.id,
             "username": self.username,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.email,
+            "password": self.password
             # do not serialize the password, its a security breach
         }
 
-class Character(db.Model):
+class People(db.Model):
+    __tablename__ = 'people'
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     birth_year: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -51,18 +56,35 @@ class Character(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "birth_year": self.birth_year 
+            "birth_year": self.birth_year,
+            "eye_color": self.eye_color,
+            "gender": self.gender,
+            "hair_color": self.hair_color,
+            "height": self.height,
+            "mass": self.mass,
+            "skin_color": self.skin_color,
+            "url": self.url,
+            "created": self.created,
+            "edited": self.edited
         }
     
     @classmethod
-    def get_by_id(cls, character_id: int):
-        return db.session.execute(db.select(cls).filter_by(id=character_id)).scalar_one_or_none()
+    def get_by_id(cls, people_id: int):
+        return db.session.execute(db.select(cls).filter_by(id=people_id)).scalar_one_or_none()
 
 class Planet(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     climate: Mapped[str] = mapped_column(String(50), nullable=False)
     terrain: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "climate": self.climate,
+            "terrain": self.terrain
+        }
 
 class Vehicle(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -71,17 +93,36 @@ class Vehicle(db.Model):
     manufacturer: Mapped[str] = mapped_column(String(50), nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "model": self.model,
+            "manufacturer": self.manufacturer,
+            "capacity": self.capacity
+        }
+
 class Favorite(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    character_id: Mapped[int] = mapped_column(ForeignKey("character.id", ondelete="CASCADE"), nullable=True)
+    people_id: Mapped[int] = mapped_column(ForeignKey("people.id", ondelete="CASCADE"), nullable=True)
     planet_id: Mapped[int] = mapped_column(ForeignKey("planet.id", ondelete="CASCADE"), nullable=True)
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicle.id", ondelete="CASCADE"), nullable=True)
     # Relaciones
     user: Mapped[list['User']] = relationship("User", back_populates="favorites")
-    character: Mapped[list['Character']] = relationship("Character")
+    people: Mapped[list['People']] = relationship("People")
     planet: Mapped[list['Planet']] = relationship("Planet")
     vehicle: Mapped[list['Vehicle']] = relationship("Vehicle")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "people_id": self.people_id,
+            "planet_id": self.planet_id,
+            "vehicle_id": self.vehicle_id
+        }
+
 
 class Post(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
