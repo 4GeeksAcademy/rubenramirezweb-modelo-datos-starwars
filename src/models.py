@@ -26,6 +26,9 @@ class User(db.Model):
     posts = relationship("Post", back_populates="user")
     comments = relationship("Comment", back_populates="user")
 
+    def __str__(self):
+        return self.username
+
     def serialize(self):
         return {
             "id": self.id,
@@ -51,6 +54,10 @@ class People(db.Model):
     url: Mapped[str] = mapped_column(String(150), nullable=False)
     created: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     edited: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Metodo mágico para mostrar un texto
+    def __str__(self):
+        return self.name
 
     def serialize(self):
         return {
@@ -78,6 +85,9 @@ class Planet(db.Model):
     climate: Mapped[str] = mapped_column(String(50), nullable=False)
     terrain: Mapped[str] = mapped_column(String(50), nullable=False)
 
+    def __str__(self):
+        return self.name
+
     def serialize(self):
         return {
             "id": self.id,
@@ -92,6 +102,9 @@ class Vehicle(db.Model):
     model: Mapped[str] = mapped_column(String(50), nullable=False)
     manufacturer: Mapped[str] = mapped_column(String(50), nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    def __str__(self):
+        return self.name
 
     def serialize(self):
         return {

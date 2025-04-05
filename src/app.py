@@ -121,19 +121,25 @@ def get_all_users_favorites():
             favorites_list.append({
                 "id": fav.id,
                 "user_id": fav.user_id,
-                "people": fav.people_name if fav.people else None,
+                "people": fav.people.name if fav.people else None,
+                "people_id": fav.id if fav.people else None,
                 "planet": fav.planet.name if fav.planet else None,
-                "vehicle": fav.vehicle.name if fav.vehicle else None
+                "planet_id": fav.id if fav.planet else None,
+                "vehicle": fav.vehicle.name if fav.vehicle else None,
+                "vehicle_id": fav.id if fav.vehicle else None
             })
         
         return jsonify({"favorites": favorites_list}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
+# Añade un nuevo Planeta Favorito al Usuario actual con el id del Planeta
 @app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
 def add_favorite_planet(planet_id):
     try:
+        print(planet_id)
         data = request.get_json()
         user_id = data.get("user_id")
 
@@ -144,6 +150,11 @@ def add_favorite_planet(planet_id):
         planet = db.session.get(Planet, planet_id)
         if not planet:
             return jsonify({"error": f"Planet with id {planet_id} does not exist"}), 404
+        
+        planet_fav = db.session.execute(db.select(Favorite).filter_by(planet_id=planet_id)).scalar_one_or_none()
+        print(planet_fav)
+        if planet_fav:
+            return jsonify({"error": f"Planet with id {planet_id} exist as favorite"}), 400
 
         new_fav = Favorite(user_id=user_id, planet_id=planet_id)
         db.session.add(new_fav)
@@ -155,7 +166,85 @@ def add_favorite_planet(planet_id):
         return jsonify({"error": str(e)}), 500
 
 
+# Añade un nuevo Personaje Favorito al Usuario actual con el id del Personaje.
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def add_favorite_people(people_id):
+    try:
+        print(people_id)
+        data = request.get_json()
+        user_id = data.get("user_id")
 
+        if not user_id:
+            return jsonify({"error": "user_id is required"}), 400
+        
+        # Validar si el personaje existe
+        people = db.session.get(People, people_id)
+        if not people:
+            return jsonify({"error": f"People with id {people_id} does not exist"}), 404
+        
+        people_fav = db.session.execute(db.select(Favorite).filter_by(people_id=people_id)).scalar_one_or_none()
+        print(people_fav)
+        if people_fav:
+            return jsonify({"error": f"People with id {people_id} exist as favorite"}), 400
+
+        new_fav = Favorite(user_id=user_id, people_id=people_id)
+        db.session.add(new_fav)
+        db.session.commit()
+
+        return jsonify({"message": "People added to favorites"}), 201
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Elimina un Planeta Favorito con el id del Planeta.
+@app.route('/favorite/planet/<int:planet_id>', methods=['DELETE'])
+def del_favorite_planet(planet_id):
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id")
+
+        if not user_id:
+            return jsonify({"error": "user_id is required"}), 400
+        
+        # Busca el favorito que tenga ese planet_id
+        fav = db.session.execute(db.select(Favorite).filter_by(planet_id=planet_id)).scalar_one_or_none()
+
+        # Si existe, lo eliminas
+        if fav:
+            db.session.delete(fav)
+            db.session.commit()
+            return jsonify({"message": "Favorito eliminado con éxito"}), 200
+        else:
+            return jsonify({"error": "No se encontró el favorito"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Elimina un People Favorito con el id de People.
+@app.route('/favorite/people/<int:people_id>', methods=['DELETE'])
+def del_favorite_people(people_id):
+    try:
+        data = request.get_json()
+        user_id = data.get("user_id")
+
+        if not user_id:
+            return jsonify({"error": "user_id is required"}), 400
+        
+        # Busca el favorito que tenga ese people_id
+        fav = db.session.execute(db.select(Favorite).filter_by(people_id=people_id)).scalar_one_or_none()
+
+        # Si existe, lo eliminas
+        if fav:
+            db.session.delete(fav)
+            db.session.commit()
+            return jsonify({"message": "Personaje favorito eliminado con éxito"}), 200
+        else:
+            return jsonify({"error": "No se encontró el favorito"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 
 # this only runs if `$ python src/app.py` is executed
